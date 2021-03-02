@@ -1,9 +1,33 @@
-mod error;
+#![windows_subsystem = "windows"]
+#![allow(unused)]
+#![deny(unused_imports)]
+
 use crate::error::LoadError;
-use iced::{executor, Align, Application, Button, Column, Command, Element, Settings, Text};
+use crate::ui::launcher::{LauncherMessage, LauncherState};
+use crate::ui::login::{LoginMessage, LoginState};
+use iced::{executor, Application, Command, Element, Settings, Text};
+
+mod demo_data;
+mod error;
+mod fonts;
+mod ui;
+mod widgets;
 
 fn main() -> iced::Result {
     Launcher::run(Settings::default())
+}
+
+#[derive(Debug, Clone)]
+pub enum Message {
+    Loading,
+    Loaded(Result<State, LoadError>),
+    StateMessage(StateMessage),
+}
+
+#[derive(Debug, Clone)]
+pub enum StateMessage {
+    LauncherMessage(LauncherMessage),
+    LoginMessage(LoginMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -23,39 +47,37 @@ impl State {
         Self::Launcher(LauncherState::new())
     }
 
+    pub fn update(&mut self, message: StateMessage) {
+        match message {
+            StateMessage::LauncherMessage(launcher_message) => match self {
+                State::Launcher(launcher) => {
+                    launcher.update(launcher_message);
+                }
+                _ => {}
+            },
+            StateMessage::LoginMessage(login_message) => match self {
+                State::Login(login) => {
+                    unimplemented!()
+                }
+                _ => {}
+            },
+        }
+    }
+
+    pub fn view(&mut self) -> Element<StateMessage> {
+        match self {
+            State::Login(state) => {
+                unimplemented!()
+            }
+            State::Launcher(state) => state
+                .view()
+                .map(move |message| StateMessage::LauncherMessage(message)),
+        }
+    }
+
     pub async fn load() -> Result<Self, LoadError> {
         Ok(Self::new())
     }
-}
-
-// TODO: implement this
-#[derive(Debug, Clone)]
-pub struct LoginState {}
-
-#[derive(Debug, Clone)]
-pub struct LauncherState {
-    current: MenuState,
-}
-
-impl LauncherState {
-    pub fn new() -> Self {
-        Self {
-            current: MenuState::Home,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum MenuState {
-    Home,
-    Profile,
-    Shop,
-    Inventory,
-}
-
-#[derive(Debug, Clone)]
-pub enum Message {
-    Loaded(Result<State, LoadError>),
 }
 
 impl Application for Launcher {
@@ -63,7 +85,7 @@ impl Application for Launcher {
     type Message = Message;
     type Flags = ();
 
-    fn new(flags: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
         (
             Self::Loading,
             Command::perform(State::load(), Message::Loaded),
@@ -75,20 +97,37 @@ impl Application for Launcher {
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
-        match message {
-            Message::Loaded(Ok(state)) => {
-                *self = Launcher::Loaded(State::Launcher(LauncherState::new()))
+        match self {
+            Launcher::Loading => {
+                match message {
+                    Message::Loaded(Ok(state)) => {
+                        *self = Launcher::Loaded(state);
+                    }
+                    Message::Loaded(Err(err)) => {
+                        // TODO error handling
+                        eprintln!("{:?}", err);
+                        *self = Launcher::Loaded(State::new());
+                    }
+                    _ => {}
+                }
             }
-            Message::Loaded(Err(err)) => {
-                // TODO error handling
-                *self = Launcher::Loaded(State::new())
-            }
+            Launcher::Loaded(state) => match message {
+                Message::StateMessage(state_message) => {
+                    state.update(state_message);
+                }
+                _ => {}
+            },
         }
 
         Command::none()
     }
 
     fn view(&mut self) -> Element<Message> {
-        Column::new().push(Text::new("Hello World")).into()
+        match self {
+            Launcher::Loading => Text::new("Loading...").into(),
+            Launcher::Loaded(state) => state
+                .view()
+                .map(move |message| Message::StateMessage(message)),
+        }
     }
 }
