@@ -1359,6 +1359,7 @@ version = "0.1.0"
 dependencies = [
  "iced",
  "iced_futures",
+ "iced_graphics",
  "iced_native",
  "reqwest",
 ]
