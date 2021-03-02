@@ -1,62 +1,94 @@
-use iced::*;
+mod error;
+use crate::error::LoadError;
+use iced::{executor, Align, Application, Button, Column, Command, Element, Settings, Text};
 
 fn main() -> iced::Result {
-    Counter::run(Settings::default())
+    Launcher::run(Settings::default())
 }
 
-#[derive(Default)]
-struct Counter {
-    value: i32,
-    increment_button: button::State,
-    decrement_button: button::State,
+#[derive(Debug, Clone)]
+pub enum Launcher {
+    Loading,
+    Loaded(State),
 }
 
-#[derive(Debug, Clone, Copy)]
-enum Message {
-    IncrementPressed,
-    DecrementPressed,
+#[derive(Debug, Clone)]
+pub enum State {
+    Login(LoginState),
+    Launcher(LauncherState),
 }
 
-impl Application for Counter {
+impl State {
+    pub fn new() -> Self {
+        Self::Launcher(LauncherState::new())
+    }
+
+    pub async fn load() -> Result<Self, LoadError> {
+        Ok(Self::new())
+    }
+}
+
+// TODO: implement this
+#[derive(Debug, Clone)]
+pub struct LoginState {}
+
+#[derive(Debug, Clone)]
+pub struct LauncherState {
+    current: MenuState,
+}
+
+impl LauncherState {
+    pub fn new() -> Self {
+        Self {
+            current: MenuState::Home,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum MenuState {
+    Home,
+    Profile,
+    Shop,
+    Inventory,
+}
+
+#[derive(Debug, Clone)]
+pub enum Message {
+    Loaded(Result<State, LoadError>),
+}
+
+impl Application for Launcher {
     type Executor = executor::Default;
     type Message = Message;
     type Flags = ();
 
     fn new(flags: Self::Flags) -> (Self, Command<Self::Message>) {
-        (Self::default(), Command::none())
+        (
+            Self::Loading,
+            Command::perform(State::load(), Message::Loaded),
+        )
     }
-
 
     fn title(&self) -> String {
-        String::from("Counter - Iced")
+        String::from("Redox")
     }
 
-    fn update(&mut self, message: Message)  -> Command<Message> {
+    fn update(&mut self, message: Message) -> Command<Message> {
         match message {
-            Message::IncrementPressed => {
-                self.value += 1;
+            Message::Loaded(Ok(state)) => {
+                *self = Launcher::Loaded(State::Launcher(LauncherState::new()))
             }
-            Message::DecrementPressed => {
-                self.value -= 1;
+            Message::Loaded(Err(err)) => {
+                // TODO error handling
+                *self = Launcher::Loaded(State::new())
             }
-        };
+        }
 
         Command::none()
     }
 
     fn view(&mut self) -> Element<Message> {
-        Column::new()
-            .padding(20)
-            .align_items(Align::Center)
-            .push(
-                Button::new(&mut self.increment_button, Text::new("Increment"))
-                    .on_press(Message::IncrementPressed),
-            )
-            .push(Text::new(self.value.to_string()).size(50))
-            .push(
-                Button::new(&mut self.decrement_button, Text::new("Decrement"))
-                    .on_press(Message::DecrementPressed)
-            )
-            .into()
+        Column::new().push(Text::new("Hello World")).into()
     }
 }
