@@ -1,4 +1,5 @@
 use iced::{Align, Column, Element, Text};
+use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub enum ProfileMessage {
@@ -21,4 +22,6 @@ impl ProfileView {
             .push(Text::new("Profile Page"))
             .into()
     }
+
+    pub fn tick(&mut self, instant: Instant) {}
 }

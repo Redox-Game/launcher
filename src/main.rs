@@ -1,11 +1,12 @@
 #![windows_subsystem = "windows"]
 #![allow(unused)]
-#![deny(unused_imports)]
+// #![deny(unused_imports)]
 
 use crate::error::LoadError;
 use crate::ui::launcher::{LauncherMessage, LauncherState};
 use crate::ui::login::{LoginMessage, LoginState};
-use iced::{executor, Application, Command, Element, Settings, Text};
+use iced::{executor, time, Application, Command, Element, Settings, Subscription, Text};
+use std::time::Instant;
 
 mod demo_data;
 mod error;
@@ -14,7 +15,10 @@ mod ui;
 mod widgets;
 
 fn main() -> iced::Result {
-    Launcher::run(Settings::default())
+    Launcher::run(Settings {
+        antialiasing: true,
+        ..Settings::default()
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -22,6 +26,7 @@ pub enum Message {
     Loading,
     Loaded(Result<State, LoadError>),
     StateMessage(StateMessage),
+    Tick(Instant),
 }
 
 #[derive(Debug, Clone)]
@@ -75,6 +80,13 @@ impl State {
         }
     }
 
+    pub fn tick(&mut self, instant: Instant) {
+        match self {
+            State::Launcher(state) => state.tick(instant),
+            _ => {}
+        };
+    }
+
     pub async fn load() -> Result<Self, LoadError> {
         Ok(Self::new())
     }
@@ -115,11 +127,18 @@ impl Application for Launcher {
                 Message::StateMessage(state_message) => {
                     state.update(state_message);
                 }
+                Message::Tick(instant) => {
+                    state.tick(instant);
+                }
                 _ => {}
             },
         }
 
         Command::none()
+    }
+
+    fn subscription(&self) -> Subscription<Message> {
+        time::every(std::time::Duration::from_millis(10)).map(|instant| Message::Tick(instant))
     }
 
     fn view(&mut self) -> Element<Message> {

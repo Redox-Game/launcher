@@ -5,10 +5,10 @@ use crate::ui::launcher::profile::ProfileView;
 use crate::ui::launcher::shop::ShopView;
 use crate::ui::launcher::{LauncherMessage, LauncherSubState};
 use iced::{button, Align, Button, Element, Row, Text};
+use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub struct TopBar {
-    height: f32,
     play_button: button::State,
     home_button: button::State,
     profile_button: button::State,
@@ -17,9 +17,8 @@ pub struct TopBar {
 }
 
 impl TopBar {
-    pub fn new(height: f32) -> Self {
+    pub fn new() -> Self {
         Self {
-            height,
             play_button: button::State::new(),
             home_button: button::State::new(),
             profile_button: button::State::new(),
@@ -27,6 +26,7 @@ impl TopBar {
             // settings_button: button::State::new()
         }
     }
+
     pub fn view(&mut self) -> Element<LauncherMessage> {
         let play_button = Button::new(
             &mut self.play_button,
@@ -77,4 +77,6 @@ impl TopBar {
             .push(shop_button)
             .into()
     }
+
+    pub fn tick(&mut self, instant: Instant) {}
 }

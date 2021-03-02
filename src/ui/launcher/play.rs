@@ -1,4 +1,5 @@
 use iced::{Align, Column, Element, Text};
+use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub enum PlayMessage {
@@ -21,4 +22,6 @@ impl PlayView {
             .push(Text::new("Play Page"))
             .into()
     }
+
+    pub fn tick(&mut self, instant: Instant) {}
 }

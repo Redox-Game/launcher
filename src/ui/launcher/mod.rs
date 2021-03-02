@@ -2,8 +2,10 @@ use crate::ui::launcher::home::{HomeMessage, HomeView};
 use crate::ui::launcher::play::{PlayMessage, PlayView};
 use crate::ui::launcher::profile::{ProfileMessage, ProfileView};
 use crate::ui::launcher::shop::{ShopMessage, ShopView};
+use crate::widgets::side_bar::SideBar;
 use crate::widgets::top_bar::TopBar;
-use iced::{scrollable, Align, Column, Container, Element, Length, Scrollable};
+use iced::{scrollable, Align, Column, Container, Element, Length, Row, Scrollable};
+use std::time::Instant;
 
 pub mod home;
 pub mod play;
@@ -13,6 +15,7 @@ pub mod shop;
 #[derive(Debug, Clone)]
 pub enum LauncherMessage {
     SwitchState(LauncherSubState),
+    AddFriend,
 
     PlayMessage(PlayMessage),
     HomeMessage(HomeMessage),
@@ -28,18 +31,29 @@ pub enum LauncherSubState {
     Shop(ShopView),
 }
 
+impl LauncherSubState {
+    pub fn tick(&mut self, instant: Instant) {
+        match self {
+            LauncherSubState::Play(state) => state.tick(instant),
+            LauncherSubState::Home(state) => state.tick(instant),
+            LauncherSubState::Profile(state) => state.tick(instant),
+            LauncherSubState::Shop(state) => state.tick(instant),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct LauncherState {
-    scrollable: scrollable::State,
     top_bar: TopBar,
+    side_bar: SideBar,
     current: LauncherSubState,
 }
 
 impl LauncherState {
     pub fn new() -> Self {
         Self {
-            scrollable: scrollable::State::new(),
-            top_bar: TopBar::new(50.0),
+            top_bar: TopBar::new(),
+            side_bar: SideBar::new(),
             current: LauncherSubState::Home(HomeView::new()),
         }
     }
@@ -65,11 +79,13 @@ impl LauncherState {
                 LauncherSubState::Shop(view) => view.update(message),
                 _ => {}
             },
+            _ => {}
         }
     }
 
     pub fn view(&mut self) -> Element<LauncherMessage> {
         let top_bar = self.top_bar.view();
+        let side_bar = self.side_bar.view();
 
         let view = match &mut self.current {
             LauncherSubState::Play(sub_state) => sub_state
@@ -86,11 +102,21 @@ impl LauncherState {
                 .map(move |message| LauncherMessage::ShopMessage(message)),
         };
 
-        let content = Column::new().push(top_bar).push(view);
+        let content = Column::new()
+            .push(Container::new(top_bar).width(Length::Fill).center_x())
+            .push(
+                Container::new(Row::new().push(view).push(side_bar))
+                    .align_x(Align::End)
+                    .width(Length::Fill),
+            );
 
-        Scrollable::new(&mut self.scrollable)
+        Column::new()
             .align_items(Align::Center)
             .push(Container::new(content).width(Length::Fill).center_x())
             .into()
+    }
+
+    pub fn tick(&mut self, instant: Instant) {
+        self.current.tick(instant);
     }
 }

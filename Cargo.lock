@@ -1361,6 +1361,7 @@ dependencies = [
  "iced_futures",
  "iced_graphics",
  "iced_native",
+ "rand 0.8.3",
  "reqwest",
 ]
 

@@ -22,6 +22,7 @@ pub enum Icon {
     Speed,
     Play,
     Shop,
+    Add,
 }
 
 impl Icon {
@@ -39,6 +40,7 @@ impl Icon {
             Icon::Speed => '\u{eff3}',
             Icon::Play => '\u{ec74}',
             Icon::Shop => '\u{efe7}',
+            Icon::Add => '\u{ec3e}',
         }
     }
 }
